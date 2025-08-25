@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.drunk_driving"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.drunk_driving"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -56,4 +56,14 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    //navigation
+    val nav_version = "2.9.1"
+    implementation("androidx.navigation:navigation-compose:${nav_version}")
+
+    // Google maps
+    implementation ("com.google.android.gms:play-services-maps:19.1.0")
+    implementation ("com.google.android.gms:play-services-location:21.3.0")
+    // Google maps for compose
+    implementation ("com.google.maps.android:maps-compose:4.4.1")
 }
