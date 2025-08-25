@@ -64,6 +64,9 @@ class MainActivity : ComponentActivity() {
                             composable("SelectIdentityPage") {
                                 SelectIdentityPage(navController)
                             }
+                            composable("CameraPhotoPage") {
+                                CameraPhotoPage(navController)
+                            }
                         }
                     }
                 }
