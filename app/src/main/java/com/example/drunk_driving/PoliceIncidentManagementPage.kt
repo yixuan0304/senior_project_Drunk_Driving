@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +55,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +65,7 @@ fun PoliceIncidentManagementPage(navController: NavController){
     val searchQuery = rememberSaveable() { mutableStateOf("") }
     var filteredCase = cases.filter { it.toString().contains(searchQuery.value, ignoreCase = true) }
     var selectedCase = rememberSaveable { mutableStateOf<CaseData?>(null) }
+    val coroutineScope = rememberCoroutineScope()
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -88,7 +93,10 @@ fun PoliceIncidentManagementPage(navController: NavController){
                     ) {
                         IconButton(
                             onClick = {
-                                navController.navigate("LoginPage")
+                                coroutineScope.launch {
+                                    Firebase.auth.signOut()
+                                    navController.navigate("LoginPage")
+                                }
                             },
                             modifier = Modifier.weight(1f)
                         ) {

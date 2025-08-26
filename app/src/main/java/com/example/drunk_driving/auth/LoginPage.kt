@@ -1,5 +1,6 @@
 package com.example.drunk_driving.auth
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.drunk_driving.R
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
 fun LoginPage(navController: NavController) {
@@ -48,6 +52,7 @@ fun LoginPage(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var unknownAccount by remember { mutableStateOf<Boolean>(false) }
+    val context = LocalContext.current
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -135,7 +140,16 @@ fun LoginPage(navController: NavController) {
 
         //loginButton
         OutlinedButton(
-            onClick = {},
+            onClick = {
+                Firebase.auth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Toast.makeText(context, "登入成功", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, task.exception?.message ?: "登入失敗", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7BADC)),
             border = BorderStroke(width = 2.dp, color = Black),
             shape = RoundedCornerShape(10.dp),
