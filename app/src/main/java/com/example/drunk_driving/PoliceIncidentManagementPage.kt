@@ -49,22 +49,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PoliceIncidentManagementPage(navController: NavController){
+fun PoliceIncidentManagementPage(
+    navController: NavController,
+    onSignOut: () -> Unit
+){
     val searchQuery = rememberSaveable() { mutableStateOf("") }
-    var filteredCase = cases.filter { it.toString().contains(searchQuery.value, ignoreCase = true) }
-    var selectedCase = rememberSaveable { mutableStateOf<CaseData?>(null) }
+    val filteredCase = cases.filter { it.toString().contains(searchQuery.value, ignoreCase = true) }
+    val selectedCase = rememberSaveable { mutableStateOf<CaseData?>(null) }
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
         topBar = {
@@ -95,6 +95,7 @@ fun PoliceIncidentManagementPage(navController: NavController){
                             onClick = {
                                 coroutineScope.launch {
                                     Firebase.auth.signOut()
+                                    onSignOut()
                                     navController.navigate("LoginPage")
                                 }
                             },
@@ -361,7 +362,7 @@ fun CaseDetailDialog(
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
-                    var reportAccountPhone = members.filter { it.email == currentCase.report_account }.single().phone
+                    val reportAccountPhone = members.filter { it.email == currentCase.report_account }.single().phone
                     Text(
                         text = reportAccountPhone,
                         fontSize = 14.sp
@@ -374,14 +375,5 @@ fun CaseDetailDialog(
                 }
             }
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PoliceIncidentManagementPagePreview(){
-    Drunk_DrivingTheme {
-        val navController = rememberNavController()
-        PoliceIncidentManagementPage(navController = navController)
     }
 }

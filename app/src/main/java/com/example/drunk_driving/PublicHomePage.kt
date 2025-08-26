@@ -46,7 +46,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PublicHomePage(navController: NavController){
+fun PublicHomePage(
+    navController: NavController,
+    onSignOut: () -> Unit
+){
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
@@ -107,6 +110,7 @@ fun PublicHomePage(navController: NavController){
                             onClick = {
                                 coroutineScope.launch {
                                     Firebase.auth.signOut()
+                                    onSignOut()
                                     navController.navigate("LoginPage")
                                 }
                             },

@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,16 +44,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.drunk_driving.R
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
+import com.example.drunk_driving.auth.sign_in.SignInState
 
 @Composable
-fun LoginPage(navController: NavController) {
+fun LoginPage(
+    navController: NavController,
+    state: SignInState,
+    onGoogleSignInClick: () -> Unit,
+    onEmailSignInClick: (String, String) -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var unknownAccount by remember { mutableStateOf<Boolean>(false) }
+    val unknownAccount by remember { mutableStateOf<Boolean>(false) }
     val context = LocalContext.current
+
+    LaunchedEffect(state.signInError) {
+        state.signInError?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+        }
+    }
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -138,60 +149,32 @@ fun LoginPage(navController: NavController) {
             }
         }
 
-        //loginButton
+        // loginButton
         OutlinedButton(
-            onClick = {
-                Firebase.auth.signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            Toast.makeText(context, "登入成功", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, task.exception?.message ?: "登入失敗", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-            },
+            onClick = { onEmailSignInClick(email, password) },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7BADC)),
-            border = BorderStroke(width = 2.dp, color = Black),
+            border = BorderStroke(2.dp, Black),
             shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .padding(vertical = 25.dp)
-                .size(width = 180.dp, height = 50.dp)
+            modifier = Modifier.padding(vertical = 25.dp).size(width = 180.dp, height = 50.dp)
         ) {
-            Text(
-                text = "登入",
-                color = Black,
-                fontSize = 15.sp
-            )
+            Text("登入", color = Black, fontSize = 15.sp)
         }
 
-        //googleLoginButton
+        // Google loginButton
         OutlinedButton(
-            onClick = {},
+            onClick = onGoogleSignInClick,
             colors = ButtonDefaults.buttonColors(containerColor = White),
-            border = BorderStroke(width = 2.dp, color = Black),
+            border = BorderStroke(2.dp, Black),
             shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .size(width = 180.dp, height = 50.dp)
+            modifier = Modifier.size(width = 180.dp, height = 50.dp)
         ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ){
+            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
                 Image(
                     painter = painterResource(id = R.drawable.google_icon),
                     contentDescription = null,
-                    modifier = Modifier
-                        .size(25.dp)
-                        .padding(end = 5.dp)
+                    modifier = Modifier.size(25.dp).padding(end = 5.dp)
                 )
-                Text(
-                    text = "Google登入",
-                    color = Black,
-                    fontSize = 15.sp,
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                )
+                Text("Google登入", color = Black, fontSize = 15.sp, modifier = Modifier.align(Alignment.CenterVertically))
             }
         }
 

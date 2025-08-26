@@ -14,16 +14,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
 import kotlinx.coroutines.delay
 
 @Composable
-fun LoadingPage(navController: NavController){
+fun LoadingPage(
+    navController: NavController,
+    isUserSignedIn: Boolean
+){
+    LaunchedEffect(Unit) {
+        delay(3000)
+        if (isUserSignedIn) {
+            navController.navigate("SelectIdentityPage") {
+                popUpTo("LoadingPage") { inclusive = true }
+            }
+        } else {
+            navController.navigate("LoginPage") {
+                popUpTo("LoadingPage") { inclusive = true }
+            }
+        }
+    }
+
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -44,20 +57,5 @@ fun LoadingPage(navController: NavController){
             color = White,
             fontSize = 30.sp
         )
-    }
-
-    // 延遲 3 秒後跳轉到 LoginPage
-    LaunchedEffect(Unit) {
-        delay(3000)
-        navController.navigate("LoginPage")
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoadingPagePreview(){
-    Drunk_DrivingTheme {
-        val navController = rememberNavController()
-        LoadingPage(navController = navController)
     }
 }
