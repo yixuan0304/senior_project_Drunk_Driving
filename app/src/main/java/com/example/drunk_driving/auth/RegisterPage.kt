@@ -1,5 +1,6 @@
 package com.example.drunk_driving.auth
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -54,6 +57,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.drunk_driving.R
 import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import kotlinx.coroutines.delay
 
 @Composable
 fun RegisterPage(navController: NavController) {
@@ -67,6 +73,7 @@ fun RegisterPage(navController: NavController) {
     var showTermsOfServiceDialog by remember { mutableStateOf(false) }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
     var isRegisterButtonClicked by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -379,7 +386,25 @@ fun RegisterPage(navController: NavController) {
                         phoneNumber.isNotBlank() && isValidPhoneNumber(phoneNumber) &&
                         read_selectedOption
                     ) {
-                        navController.navigate("SelectIdentityPage")
+                        Firebase.auth.createUserWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Firebase.auth.currentUser?.sendEmailVerification()
+                                        ?.addOnCompleteListener { verificationTask ->
+                                            if (verificationTask.isSuccessful) {
+                                                Toast.makeText(context, "驗證信已寄出，請至信箱收取", Toast.LENGTH_LONG).show()
+                                                // 跳到等待驗證頁
+                                                navController.navigate("WaitForVerificationPage") {
+                                                    popUpTo("RegisterPage") { inclusive = true }
+                                                }
+                                            } else {
+                                                Toast.makeText(context, "寄送驗證信失敗: ${verificationTask.exception?.message}", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                } else {
+                                    Toast.makeText(context, task.exception?.message ?: "註冊失敗", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7BADC)),
@@ -427,11 +452,84 @@ fun isValidPhoneNumber(phoneNumber: String):Boolean{
     return phoneNumberRegex.matches(phoneNumber)
 }
 
+//等待驗證頁面
+@Composable
+fun WaitForVerificationPage(
+    navController: NavController,
+    previewMode: Boolean = false
+) {
+    val context = LocalContext.current
+    val auth = if (!previewMode) Firebase.auth else null
+    var isChecking by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        while (isChecking) {
+            auth?.currentUser?.reload()?.addOnCompleteListener { reloadTask ->
+                if (reloadTask.isSuccessful && auth.currentUser?.isEmailVerified == true) {
+                    isChecking = false
+                    navController.navigate("SelectIdentityPage") {
+                        popUpTo("WaitForVerificationPage") { inclusive = true }
+                    }
+                }
+            }
+            delay(3000) // 每 3 秒檢查一次
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF7178B3))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "我們已經將驗證信寄到\n${auth?.currentUser?.email}，\n請前往信箱點擊驗證連結",
+            textAlign = TextAlign.Center,
+            color = White
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedButton(
+            onClick = {
+                auth?.currentUser?.sendEmailVerification()?.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Toast.makeText(context, "驗證信已重新寄出", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "寄送失敗: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7BADC)),
+            border = BorderStroke(width = 2.dp, color = Black),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier
+                .padding(top = 25.dp)
+                .size(width = 180.dp, height = 50.dp)
+        ) {
+            Text(
+                text = "重新寄送驗證信",
+                color = Black,
+                fontSize = 15.sp
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun RegisterPagePreview(){
     Drunk_DrivingTheme {
         val navController = rememberNavController()
         RegisterPage(navController = navController)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun WaitForVerificationPagePreview(){
+    Drunk_DrivingTheme {
+        val navController = rememberNavController()
+        WaitForVerificationPage(navController = navController, previewMode = true)
     }
 }
