@@ -27,7 +27,6 @@ import com.example.drunk_driving.auth.ForgetPasswordPage
 import com.example.drunk_driving.auth.LoginPage
 import com.example.drunk_driving.auth.RegisterPage
 import com.example.drunk_driving.auth.ResetPasswordPage
-import com.example.drunk_driving.auth.WaitForVerificationPage
 import com.example.drunk_driving.auth.sign_in.GoogleAuthUiClient
 import com.example.drunk_driving.auth.sign_in.SignInViewModel
 import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
@@ -89,7 +88,6 @@ class MainActivity : ComponentActivity() {
                             composable("LoadingPage") {
                                 LoadingPage(
                                     navController,
-                                    //googleAuthUiClient = googleAuthUiClient
                                     isUserSignedIn = googleAuthUiClient.getSignedInUser() != null
                                 )
                             }
@@ -159,9 +157,6 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("CameraPhotoPage") {
                                 CameraPhotoPage(navController)
-                            }
-                            composable("WaitForVerificationPage") {
-                                WaitForVerificationPage(navController)
                             }
                         }
                     }

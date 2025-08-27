@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -73,7 +74,27 @@ fun RegisterPage(navController: NavController) {
     var showTermsOfServiceDialog by remember { mutableStateOf(false) }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
     var isRegisterButtonClicked by remember { mutableStateOf(false) }
+    var verificationEmailSent by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var isChecking by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    // 檢查Email驗證狀態
+    LaunchedEffect(verificationEmailSent) {
+        if (verificationEmailSent) {
+            isChecking = true
+            while (isChecking && verificationEmailSent) {
+                Firebase.auth.currentUser?.reload()?.addOnCompleteListener { reloadTask ->
+                    if (reloadTask.isSuccessful && Firebase.auth.currentUser?.isEmailVerified == true) {
+                        isChecking = false
+                        Toast.makeText(context, "Email驗證成功！請選擇您的身分", Toast.LENGTH_LONG).show()
+                        navController.navigate("SelectIdentityPage")
+                    }
+                }
+                delay(3000) // 每 3 秒檢查一次
+            }
+        }
+    }
 
     Column(
         verticalArrangement = Arrangement.Top,
@@ -91,6 +112,8 @@ fun RegisterPage(navController: NavController) {
             ){
                 IconButton(onClick = {
                     /* 返回LoginPage */
+                    verificationEmailSent = false
+                    isChecking = false
                     navController.navigate("LoginPage")
                 }) {
                     Icon(
@@ -106,6 +129,8 @@ fun RegisterPage(navController: NavController) {
                         // 點擊文字也能返回
                         .clickable {
                             /* 返回LoginPage */
+                            verificationEmailSent = false
+                            isChecking = false
                             navController.navigate("LoginPage")
                         }
                         .padding(top = 10.dp)
@@ -122,102 +147,143 @@ fun RegisterPage(navController: NavController) {
             )
         }
 
-        //email
-        InputLabelWithError(
-            label = "電子信箱",
-            showError = isRegisterButtonClicked && (email.isBlank() || !isValidEmail(email)),
-            errorMessage = if (email.isBlank()) "請輸入電子信箱" else "電子信箱格式錯誤"
-        )
-        TextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("輸入電子信箱") },
-            modifier = Modifier.width(350.dp),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            trailingIcon = {
-                Icon(Icons.Rounded.Email, contentDescription = "電子信箱圖示", modifier = Modifier.size(24.dp))
+        // 如果已經寄送驗證信，顯示驗證提示
+        if (verificationEmailSent) {
+            Text(
+                text = "我們已經將驗證信寄到\n$email\n請前往信箱點擊驗證連結",
+                textAlign = TextAlign.Center,
+                color = White,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(16.dp)
+            )
+
+            if (isChecking) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    CircularProgressIndicator(
+                        color = White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "正在檢查驗證狀態...",
+                        color = White,
+                        fontSize = 14.sp
+                    )
+                }
             }
-        )
-
-        //password
-        InputLabelWithError(
-            label = "密碼（６個字元以上）",
-            showError = isRegisterButtonClicked && password.isBlank(),
-            errorMessage = "請輸入密碼"
-        )
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("輸入密碼") },
-            modifier = Modifier.width(350.dp),
-            singleLine = true,
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val icon = if (passwordVisible) "🙈" else "👁️"
-                IconButton(onClick = { passwordVisible = !passwordVisible }) { Text(icon) }
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-        )
-
-        //確認密碼
-        InputLabelWithError(
-            label = "確認密碼",
-            showError = isRegisterButtonClicked &&
-                    (confirmPassword.isBlank() || password != confirmPassword),
-            errorMessage = if (confirmPassword.isBlank()) "請確認密碼" else "密碼與確認密碼不一致"
-        )
-        TextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text("再次輸入密碼") },
-            modifier = Modifier.width(350.dp),
-            singleLine = true,
-            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val icon = if (confirmPasswordVisible) "🙈" else "👁️"
-                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) { Text(icon) }
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-        )
-
-        //手機號碼
-        InputLabelWithError(
-            label = "手機號碼",
-            showError = isRegisterButtonClicked && (phoneNumber.isBlank() || !isValidPhoneNumber(phoneNumber)),
-            errorMessage = if (phoneNumber.isBlank()) "請輸入手機號碼" else "手機號碼格式錯誤"
-        )
-        TextField(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            label = { Text("輸入手機號碼") },
-            modifier = Modifier.width(350.dp),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-        )
-
-        //服務條款、隱私權保護政策
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            RadioButton(
-                selected = read_selectedOption,
-                onClick = { read_selectedOption = !read_selectedOption }
+        } else {
+            //email
+            InputLabelWithError(
+                label = "電子信箱",
+                showError = isRegisterButtonClicked && (email.isBlank() || !isValidEmail(email)),
+                errorMessage = if (email.isBlank()) "請輸入電子信箱" else "電子信箱格式錯誤"
             )
-            Text(text = "我已閱讀並同意 ", color = White)
-            Text(
-                text = "服務條款",
-                color = Color.Yellow,
-                modifier = Modifier.clickable { showTermsOfServiceDialog = true }
+            TextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("輸入電子信箱") },
+                modifier = Modifier.width(350.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                trailingIcon = {
+                    Icon(Icons.Rounded.Email, contentDescription = "電子信箱圖示", modifier = Modifier.size(24.dp))
+                }
             )
-            Text(" 及 ", color = White)
-            Text(
-                text = "隱私權保護政策",
-                color = Color.Yellow,
-                modifier = Modifier.clickable { showPrivacyPolicyDialog = true }
+
+            //password
+            InputLabelWithError(
+                label = "密碼（６個字元以上）",
+                showError = isRegisterButtonClicked && password.isBlank(),
+                errorMessage = "請輸入密碼"
             )
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("輸入密碼") },
+                modifier = Modifier.width(350.dp),
+                singleLine = true,
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val icon = if (passwordVisible) "🙈" else "👁️"
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) { Text(icon) }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+
+            //確認密碼
+            InputLabelWithError(
+                label = "確認密碼",
+                showError = isRegisterButtonClicked &&
+                        (confirmPassword.isBlank() || password != confirmPassword),
+                errorMessage = if (confirmPassword.isBlank()) "請確認密碼" else "密碼與確認密碼不一致"
+            )
+            TextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("再次輸入密碼") },
+                modifier = Modifier.width(350.dp),
+                singleLine = true,
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val icon = if (confirmPasswordVisible) "🙈" else "👁️"
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) { Text(icon) }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+
+            //手機號碼
+            InputLabelWithError(
+                label = "手機號碼",
+                showError = isRegisterButtonClicked && (phoneNumber.isBlank() || !isValidPhoneNumber(phoneNumber)),
+                errorMessage = if (phoneNumber.isBlank()) "請輸入手機號碼" else "手機號碼格式錯誤"
+            )
+            TextField(
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
+                label = { Text("輸入手機號碼") },
+                modifier = Modifier.width(350.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+
+            //服務條款、隱私權保護政策
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = read_selectedOption,
+                    onClick = { read_selectedOption = !read_selectedOption }
+                )
+                Text(text = "我已閱讀並同意 ", color = White)
+                Text(
+                    text = "服務條款",
+                    color = Color.Yellow,
+                    modifier = Modifier.clickable { showTermsOfServiceDialog = true }
+                )
+                Text(" 及 ", color = White)
+                Text(
+                    text = "隱私權保護政策",
+                    color = Color.Yellow,
+                    modifier = Modifier.clickable { showPrivacyPolicyDialog = true }
+                )
+            }
+
+            if (isRegisterButtonClicked && !read_selectedOption) {
+                Text(
+                    text = "請閱讀並同意服務條款及隱私權保護政策",
+                    color = Color(0xFFCA0000),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            } else {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
 
         // 服務條款 Dialog
@@ -360,18 +426,6 @@ fun RegisterPage(navController: NavController) {
             )
         }
 
-        if (isRegisterButtonClicked && !read_selectedOption) {
-            Text(
-                text = "請閱讀並同意服務條款及隱私權保護政策",
-                color = Color(0xFFCA0000),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-        } else {
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-
         Row(
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.Center,
@@ -379,32 +433,44 @@ fun RegisterPage(navController: NavController) {
         ) {
             OutlinedButton(
                 onClick = {
-                    isRegisterButtonClicked = true
-                    if (email.isNotBlank() && isValidEmail(email) &&
-                        password.isNotBlank() &&
-                        confirmPassword.isNotBlank() && password == confirmPassword &&
-                        phoneNumber.isNotBlank() && isValidPhoneNumber(phoneNumber) &&
-                        read_selectedOption
-                    ) {
-                        Firebase.auth.createUserWithEmailAndPassword(email, password)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    Firebase.auth.currentUser?.sendEmailVerification()
-                                        ?.addOnCompleteListener { verificationTask ->
-                                            if (verificationTask.isSuccessful) {
-                                                Toast.makeText(context, "驗證信已寄出，請至信箱收取", Toast.LENGTH_LONG).show()
-                                                // 跳到等待驗證頁
-                                                navController.navigate("WaitForVerificationPage") {
-                                                    popUpTo("RegisterPage") { inclusive = true }
+                    if (!verificationEmailSent) {
+                        // 註冊流程
+                        isRegisterButtonClicked = true
+                        if (email.isNotBlank() && isValidEmail(email) &&
+                            password.isNotBlank() &&
+                            confirmPassword.isNotBlank() && password == confirmPassword &&
+                            phoneNumber.isNotBlank() && isValidPhoneNumber(phoneNumber) &&
+                            read_selectedOption
+                        ) {
+                            isLoading = true
+                            Firebase.auth.createUserWithEmailAndPassword(email, password)
+                                .addOnCompleteListener { task ->
+                                    isLoading = false
+                                    if (task.isSuccessful) {
+                                        Firebase.auth.currentUser?.sendEmailVerification()
+                                            ?.addOnCompleteListener { verificationTask ->
+                                                if (verificationTask.isSuccessful) {
+                                                    Toast.makeText(context, "驗證信已寄出，請至信箱收取", Toast.LENGTH_LONG).show()
+                                                    verificationEmailSent = true
+                                                } else {
+                                                    Toast.makeText(context, "寄送驗證信失敗: ${verificationTask.exception?.message}", Toast.LENGTH_LONG).show()
                                                 }
-                                            } else {
-                                                Toast.makeText(context, "寄送驗證信失敗: ${verificationTask.exception?.message}", Toast.LENGTH_LONG).show()
                                             }
-                                        }
-                                } else {
-                                    Toast.makeText(context, task.exception?.message ?: "註冊失敗", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, task.exception?.message ?: "註冊失敗", Toast.LENGTH_SHORT).show()
+                                        verificationEmailSent = false
+                                    }
                                 }
+                        }
+                    } else {
+                        // 重新寄送驗證信
+                        Firebase.auth.currentUser?.sendEmailVerification()?.addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Toast.makeText(context, "驗證信已重新寄出", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "寄送失敗: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                             }
+                        }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7BADC)),
@@ -412,13 +478,22 @@ fun RegisterPage(navController: NavController) {
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
                     .padding(top = 25.dp)
-                    .size(width = 180.dp, height = 50.dp)
+                    .size(width = 180.dp, height = 50.dp),
+                enabled = !isLoading // 載入中時禁用按鈕
             ) {
-                Text(
-                    text = "註冊",
-                    color = Black,
-                    fontSize = 15.sp
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Black,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text(
+                        text = if (verificationEmailSent) "重新寄送驗證信" else "註冊",
+                        color = Black,
+                        fontSize = 15.sp
+                    )
+                }
             }
         }
     }
@@ -452,84 +527,11 @@ fun isValidPhoneNumber(phoneNumber: String):Boolean{
     return phoneNumberRegex.matches(phoneNumber)
 }
 
-//等待驗證頁面
-@Composable
-fun WaitForVerificationPage(
-    navController: NavController,
-    previewMode: Boolean = false
-) {
-    val context = LocalContext.current
-    val auth = if (!previewMode) Firebase.auth else null
-    var isChecking by remember { mutableStateOf(true) }
-
-    LaunchedEffect(Unit) {
-        while (isChecking) {
-            auth?.currentUser?.reload()?.addOnCompleteListener { reloadTask ->
-                if (reloadTask.isSuccessful && auth.currentUser?.isEmailVerified == true) {
-                    isChecking = false
-                    navController.navigate("SelectIdentityPage") {
-                        popUpTo("WaitForVerificationPage") { inclusive = true }
-                    }
-                }
-            }
-            delay(3000) // 每 3 秒檢查一次
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF7178B3))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "我們已經將驗證信寄到\n${auth?.currentUser?.email}，\n請前往信箱點擊驗證連結",
-            textAlign = TextAlign.Center,
-            color = White
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedButton(
-            onClick = {
-                auth?.currentUser?.sendEmailVerification()?.addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Toast.makeText(context, "驗證信已重新寄出", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "寄送失敗: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7BADC)),
-            border = BorderStroke(width = 2.dp, color = Black),
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .padding(top = 25.dp)
-                .size(width = 180.dp, height = 50.dp)
-        ) {
-            Text(
-                text = "重新寄送驗證信",
-                color = Black,
-                fontSize = 15.sp
-            )
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 fun RegisterPagePreview(){
     Drunk_DrivingTheme {
         val navController = rememberNavController()
         RegisterPage(navController = navController)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun WaitForVerificationPagePreview(){
-    Drunk_DrivingTheme {
-        val navController = rememberNavController()
-        WaitForVerificationPage(navController = navController, previewMode = true)
     }
 }
