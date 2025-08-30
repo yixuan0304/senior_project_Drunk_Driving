@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -18,7 +19,8 @@ class SignInViewModel: ViewModel() {
         _state.update {
             it.copy(
                 isSignInSuccessful = result.data != null,
-                signInError = result.errorMessage
+                signInError = result.errorMessage,
+                isGoogleSignIn = true
             )
         }
     }
@@ -33,14 +35,53 @@ class SignInViewModel: ViewModel() {
         viewModelScope.launch {
             try {
                 val result = Firebase.auth.signInWithEmailAndPassword(email, password).await()
-                _state.update {
-                    it.copy(isSignInSuccessful = result.user != null, signInError = null)
+
+                if (result.user != null) {
+                    // 登入成功後，查詢用戶的 identity
+                    val userIdentity = getUserIdentityFromDatabase(result.user!!.uid)
+
+                    _state.update {
+                        it.copy(
+                            isSignInSuccessful = true,
+                            signInError = null,
+                            isGoogleSignIn = false,
+                            userIdentity = userIdentity  // 設置用戶身份
+                        )
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            isSignInSuccessful = false,
+                            signInError = "登入失敗",
+                            isGoogleSignIn = false,
+                            userIdentity = null
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _state.update {
-                    it.copy(isSignInSuccessful = false, signInError = e.message)
+                    it.copy(
+                        isSignInSuccessful = false,
+                        signInError = e.message,
+                        isGoogleSignIn = false,
+                        userIdentity = null
+                    )
                 }
             }
         }
+    }
+}
+
+private suspend fun getUserIdentityFromDatabase(uid: String): String? {
+    return try {
+        val userDoc = Firebase.firestore
+            .collection("Users")
+            .document(uid)
+            .get()
+            .await()
+
+        userDoc.getString("identity")
+    } catch (e: Exception) {
+        null
     }
 }

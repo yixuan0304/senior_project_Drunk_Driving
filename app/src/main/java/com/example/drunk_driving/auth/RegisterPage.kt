@@ -88,10 +88,11 @@ fun RegisterPage(navController: NavController) {
                     if (reloadTask.isSuccessful && Firebase.auth.currentUser?.isEmailVerified == true) {
                         isChecking = false
                         Toast.makeText(context, "Email驗證成功！請選擇您的身分", Toast.LENGTH_LONG).show()
-                        navController.navigate("SelectIdentityPage")
+                        // 傳遞註冊資料
+                        navController.navigate("SelectIdentityPage/$email/$phoneNumber")
                     }
                 }
-                delay(3000) // 每 3 秒檢查一次
+                delay(3000)
             }
         }
     }

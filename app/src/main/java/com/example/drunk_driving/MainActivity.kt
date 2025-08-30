@@ -20,9 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.drunk_driving.auth.ForgetPasswordPage
 import com.example.drunk_driving.auth.LoginPage
 import com.example.drunk_driving.auth.RegisterPage
@@ -79,7 +81,23 @@ class MainActivity : ComponentActivity() {
                                     "Sign in successful",
                                     Toast.LENGTH_LONG
                                 ).show()
-                                navController.navigate("SelectIdentityPage")
+                                // 檢查是否為 Google 登入
+                                if(state.isGoogleSignIn) {
+                                    navController.navigate("SelectIdentityPage")
+                                } else {
+                                    when(state.userIdentity) {
+                                        "police" -> {
+                                            navController.navigate("PoliceIncidentManagementPage")
+                                        }
+                                        "public" -> {
+                                            navController.navigate("PublicHomePage")
+                                        }
+                                        // 如果 identity 為空或無效，跳轉到身份選擇頁面
+                                        else -> {
+                                            navController.navigate("SelectIdentityPage")
+                                        }
+                                    }
+                                }
                                 viewModel.resetState()
                             }
                         }
@@ -154,6 +172,19 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("SelectIdentityPage") {
                                 SelectIdentityPage(navController)
+                            }
+                            composable(
+                                "SelectIdentityPage/{email}/{phoneNumber}",
+                                arguments = listOf(
+                                    navArgument("email") { type = NavType.StringType },
+                                    navArgument("phoneNumber") { type = NavType.StringType }
+                                )
+                            ) { backStackEntry ->
+                                SelectIdentityPage(
+                                    navController,
+                                    email = backStackEntry.arguments?.getString("email") ?: "",
+                                    phoneNumber = backStackEntry.arguments?.getString("phoneNumber") ?: ""
+                                )
                             }
                             composable("CameraPhotoPage") {
                                 CameraPhotoPage(navController)

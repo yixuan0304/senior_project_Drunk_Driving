@@ -2,5 +2,7 @@ package com.example.drunk_driving.auth.sign_in
 
 data class SignInState(
     val isSignInSuccessful: Boolean = false,
-    val signInError: String? = null
+    val signInError: String? = null,
+    val isGoogleSignIn: Boolean = false,
+    val userIdentity: String? = null
 )
