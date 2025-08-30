@@ -4,5 +4,6 @@ data class SignInState(
     val isSignInSuccessful: Boolean = false,
     val signInError: String? = null,
     val isGoogleSignIn: Boolean = false,
-    val userIdentity: String? = null
+    val userIdentity: String? = null,
+    val userData: UserData? = null
 )

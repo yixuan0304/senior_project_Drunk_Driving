@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ButtonDefaults
@@ -21,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,12 +36,14 @@ import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.drunk_driving.auth.isValidPhoneNumber
 import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -49,12 +54,15 @@ import com.google.firebase.firestore.firestore
 fun SelectIdentityPage(
     navController: NavController,
     email: String = "",
-    phoneNumber: String = ""
+    phoneNumber: String = "",
+    isGoogleLogin: Boolean = false
 ){
     var isPublicButtonClicked by remember { mutableStateOf(false) }
     var isPoliceButtonClicked by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var isConfirmButtonClicked by remember { mutableStateOf(false) }
+    var inputPhoneNumber by remember { mutableStateOf(phoneNumber) }
+    var phoneError by remember { mutableStateOf("") }
     val context = LocalContext.current
 
     Column(
@@ -102,11 +110,49 @@ fun SelectIdentityPage(
             )
         }
 
+        // Google 登入用戶的電話號碼輸入欄位
+        if (isGoogleLogin) {
+            Text(
+                text = "請輸入您的手機號碼",
+                color = White,
+                fontSize = 25.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            TextField(
+                value = inputPhoneNumber,
+                onValueChange = { newValue ->
+                    inputPhoneNumber = newValue
+                    phoneError = if (newValue.isNotEmpty() && !isValidPhoneNumber(newValue)) {
+                        "請輸入正確的手機號碼格式 (09xxxxxxxx)"
+                    } else {
+                        ""
+                    }
+                },
+                label = { Text("輸入手機號碼") },
+                modifier = Modifier
+                    .padding(vertical = 16.dp)
+                    .width(300.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                isError = phoneError.isNotEmpty()
+            )
+
+            if (phoneError.isNotEmpty()) {
+                Text(
+                    text = phoneError,
+                    color = Color(0xFFCA0000),
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp)
+                )
+            }
+        }
+
         //selectText
         Text(
             text = "請選擇您的身分",
             color = White,
-            fontSize = 30.sp,
+            fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
@@ -122,7 +168,7 @@ fun SelectIdentityPage(
             ),
             shape = RoundedCornerShape(25.dp),
             modifier = Modifier
-                .padding(vertical = 30.dp)
+                .padding(vertical = 16.dp)
                 .size(width = 300.dp, height = 80.dp)
         ) {
             Image(
@@ -175,8 +221,22 @@ fun SelectIdentityPage(
             onClick = {
                 isConfirmButtonClicked = true
 
+                // 驗證身分選擇
                 if (!isPublicButtonClicked && !isPoliceButtonClicked) {
                     return@OutlinedButton
+                }
+
+                // 如果是 Google 登入，驗證電話號碼
+                if (isGoogleLogin) {
+                    if (inputPhoneNumber.isEmpty()) {
+                        phoneError = "請輸入電話號碼"
+                        return@OutlinedButton
+                    }
+                    if (!isValidPhoneNumber(inputPhoneNumber)) {
+                        phoneError = "請輸入正確的手機號碼格式 (09xxxxxxxx)"
+                        return@OutlinedButton
+                    }
+                    phoneError = ""
                 }
 
                 val currentUser = Firebase.auth.currentUser
@@ -185,11 +245,14 @@ fun SelectIdentityPage(
 
                     // 準備用戶資料
                     val userIdentity = if (isPublicButtonClicked) "public" else "police"
+                    val finalPhoneNumber = if (isGoogleLogin) inputPhoneNumber else phoneNumber
+
                     val userData = hashMapOf(
                         "uId" to currentUser.uid,
                         "email" to email,
-                        "phone" to phoneNumber,
+                        "phone" to finalPhoneNumber,
                         "identity" to userIdentity,
+                        "loginMethod" to if (isGoogleLogin) "google" else "email",
                         "createdAt" to Timestamp.now()
                     )
 
@@ -243,6 +306,7 @@ fun SelectIdentityPage(
                 )
             }
         }
+        // 錯誤訊息顯示
         if (isConfirmButtonClicked && (!isPublicButtonClicked && !isPoliceButtonClicked)) {
             Text(
                 text = "請選擇身分",
@@ -260,6 +324,10 @@ fun SelectIdentityPage(
 fun SelectIdentityPagePreview(){
     Drunk_DrivingTheme {
         val navController = rememberNavController()
-        SelectIdentityPage(navController = navController)
+        SelectIdentityPage(
+            navController = navController,
+            email = "test@gmail.com",
+            isGoogleLogin = true
+        )
     }
 }

@@ -83,7 +83,8 @@ class MainActivity : ComponentActivity() {
                                 ).show()
                                 // 檢查是否為 Google 登入
                                 if(state.isGoogleSignIn) {
-                                    navController.navigate("SelectIdentityPage")
+                                    val userEmail = state.userData?.email ?: ""
+                                    navController.navigate("SelectIdentityPage/$userEmail/true")
                                 } else {
                                     when(state.userIdentity) {
                                         "police" -> {
@@ -173,6 +174,7 @@ class MainActivity : ComponentActivity() {
                             composable("SelectIdentityPage") {
                                 SelectIdentityPage(navController)
                             }
+                            // 一般註冊用戶
                             composable(
                                 "SelectIdentityPage/{email}/{phoneNumber}",
                                 arguments = listOf(
@@ -183,7 +185,23 @@ class MainActivity : ComponentActivity() {
                                 SelectIdentityPage(
                                     navController,
                                     email = backStackEntry.arguments?.getString("email") ?: "",
-                                    phoneNumber = backStackEntry.arguments?.getString("phoneNumber") ?: ""
+                                    phoneNumber = backStackEntry.arguments?.getString("phoneNumber") ?: "",
+                                    isGoogleLogin = false
+                                )
+                            }
+                            //Google 登入用戶
+                            composable(
+                                "SelectIdentityPage/{email}/{isGoogleLogin}",
+                                arguments = listOf(
+                                    navArgument("email") { type = NavType.StringType },
+                                    navArgument("isGoogleLogin") { type = NavType.BoolType }
+                                )
+                            ) { backStackEntry ->
+                                SelectIdentityPage(
+                                    navController,
+                                    email = backStackEntry.arguments?.getString("email") ?: "",
+                                    phoneNumber = "",
+                                    isGoogleLogin = backStackEntry.arguments?.getBoolean("isGoogleLogin") ?: false
                                 )
                             }
                             composable("CameraPhotoPage") {

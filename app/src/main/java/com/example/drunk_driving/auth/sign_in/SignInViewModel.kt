@@ -20,7 +20,8 @@ class SignInViewModel: ViewModel() {
             it.copy(
                 isSignInSuccessful = result.data != null,
                 signInError = result.errorMessage,
-                isGoogleSignIn = true
+                isGoogleSignIn = true,
+                userData = result.data
             )
         }
     }
@@ -45,7 +46,12 @@ class SignInViewModel: ViewModel() {
                             isSignInSuccessful = true,
                             signInError = null,
                             isGoogleSignIn = false,
-                            userIdentity = userIdentity  // 設置用戶身份
+                            userIdentity = userIdentity,  // 設置用戶身份
+                            userData = UserData(
+                                userId = result.user!!.uid,
+                                username = result.user!!.displayName ?: "",
+                                email = result.user!!.email ?: email
+                            )
                         )
                     }
                 } else {
@@ -54,7 +60,8 @@ class SignInViewModel: ViewModel() {
                             isSignInSuccessful = false,
                             signInError = "登入失敗",
                             isGoogleSignIn = false,
-                            userIdentity = null
+                            userIdentity = null,
+                            userData = null
                         )
                     }
                 }
@@ -64,7 +71,8 @@ class SignInViewModel: ViewModel() {
                         isSignInSuccessful = false,
                         signInError = e.message,
                         isGoogleSignIn = false,
-                        userIdentity = null
+                        userIdentity = null,
+                        userData = null
                     )
                 }
             }
