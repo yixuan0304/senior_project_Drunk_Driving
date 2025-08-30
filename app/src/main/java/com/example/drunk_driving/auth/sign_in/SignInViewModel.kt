@@ -16,13 +16,31 @@ class SignInViewModel: ViewModel() {
     val state = _state.asStateFlow()
 
     fun onSignInResult(result: SignInResult) {
-        _state.update {
-            it.copy(
-                isSignInSuccessful = result.data != null,
-                signInError = result.errorMessage,
-                isGoogleSignIn = true,
-                userData = result.data
-            )
+        viewModelScope.launch {
+            if (result.data != null) {
+                // Google 登入成功，檢查資料庫中是否已有用戶身份
+                val userIdentity = getUserIdentityFromDatabase(result.data.userId)
+
+                _state.update {
+                    it.copy(
+                        isSignInSuccessful = true,
+                        signInError = result.errorMessage,
+                        isGoogleSignIn = true,
+                        userData = result.data,
+                        userIdentity = userIdentity  // 設置從資料庫查詢到的身份
+                    )
+                }
+            } else {
+                _state.update {
+                    it.copy(
+                        isSignInSuccessful = false,
+                        signInError = result.errorMessage,
+                        isGoogleSignIn = true,
+                        userData = null,
+                        userIdentity = null
+                    )
+                }
+            }
         }
     }
 

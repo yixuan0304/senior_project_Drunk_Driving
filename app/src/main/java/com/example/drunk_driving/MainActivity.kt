@@ -83,8 +83,19 @@ class MainActivity : ComponentActivity() {
                                 ).show()
                                 // 檢查是否為 Google 登入
                                 if(state.isGoogleSignIn) {
-                                    val userEmail = state.userData?.email ?: ""
-                                    navController.navigate("SelectIdentityPage/$userEmail/true")
+                                    when(state.userIdentity) {
+                                        "police" -> {
+                                            navController.navigate("PoliceIncidentManagementPage")
+                                        }
+                                        "public" -> {
+                                            navController.navigate("PublicHomePage")
+                                        }
+                                        else -> {
+                                            // 如果 identity 為空或無效，跳轉到身份選擇頁面
+                                            val userEmail = state.userData?.email ?: ""
+                                            navController.navigate("SelectIdentityPage/$userEmail/true")
+                                        }
+                                    }
                                 } else {
                                     when(state.userIdentity) {
                                         "police" -> {
