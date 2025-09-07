@@ -1,5 +1,6 @@
 package com.example.drunk_driving.auth
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,8 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,17 +45,19 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.drunk_driving.R
-import com.example.drunk_driving.members
 import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
 fun ForgetPasswordPage(navController: NavController){
     var email by remember { mutableStateOf("") }
-    var unknownAccount by remember { mutableStateOf<Boolean>(false) }
-    var noEmail by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var resetEmailSent by remember { mutableStateOf(false) }
 
     Column(
         verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF7178B3))
@@ -100,90 +103,94 @@ fun ForgetPasswordPage(navController: NavController){
             )
         }
 
-        //emailText
-        Text(
-            text = "電子信箱",
-            color = White,
-            fontSize = 20.sp,
-            textAlign = TextAlign.Start,
-            modifier = Modifier
-                .width(350.dp)
-                .padding(horizontal = 5.dp)
-                .align(Alignment.CenterHorizontally)
-        )
-
-        //emailTextField
-        TextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("電子信箱") },
-            modifier = Modifier
-                .width(350.dp)
-                .padding(horizontal = 5.dp)
-                .padding(top = 20.dp)
-                .align(Alignment.CenterHorizontally),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            trailingIcon = {
-                Icon(
-                    Icons.Rounded.Email,
-                    contentDescription = "電子信箱圖示",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        )
-
-        //submitButton
-        OutlinedButton(
-            onClick = {
-                /* 判斷email是否是已註冊帳號，若是，傳更改密碼的介面(?。若否，跳出尚未註冊的提示訊息 */
-                noEmail = false
-                unknownAccount = false
-                var loginAccount = members.filter { it.email == email}
-                if (email.isBlank()){
-                    noEmail = true
-                }else if (loginAccount.isEmpty()) {
-                    unknownAccount = true
-                }else {
-                    navController.navigate("ResetPasswordPage")
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7BADC)),
-            border = BorderStroke(width = 2.dp, color = Black),
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .padding(top = 25.dp)
-                .size(width = 150.dp, height = 50.dp)
-                .align(Alignment.CenterHorizontally)
-        ) {
+        // 如果已經寄送重設密碼郵件，顯示提示
+        if (resetEmailSent) {
             Text(
-                text = "送出",
-                color = Black,
-                fontSize = 15.sp
+                text = "重設密碼郵件已寄到\n$email\n請前往信箱點擊連結",
+                textAlign = TextAlign.Center,
+                color = White,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(16.dp)
             )
         }
+        else {
+            //emailText
+            Text(
+                text = "電子信箱",
+                color = White,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Start,
+                modifier = Modifier
+                    .width(350.dp)
+                    .padding(horizontal = 5.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
 
-        //noEmailWrongHint、unknownAccountWrongHint
-        if (noEmail){
-            Text(
-                text = "請輸入電子信箱",
-                color = Color(0xFFCA0000),
-                fontWeight = FontWeight.Bold,
-                fontSize = 30.sp,
+            //emailTextField
+            TextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("電子信箱") },
                 modifier = Modifier
-                    .padding(top = 10.dp)
-                    .align(Alignment.CenterHorizontally)
+                    .width(350.dp)
+                    .padding(horizontal = 5.dp)
+                    .padding(top = 20.dp)
+                    .align(Alignment.CenterHorizontally),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                trailingIcon = {
+                    Icon(
+                        Icons.Rounded.Email,
+                        contentDescription = "電子信箱圖示",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             )
-        }else if (unknownAccount) {
-            Text(
-                text = "您尚未註冊帳號",
-                color = Color(0xFFCA0000),
-                fontWeight = FontWeight.Bold,
-                fontSize = 30.sp,
+
+            //submitButton
+            OutlinedButton(
+                onClick = {
+                    if(!resetEmailSent) {
+                        if(email.isNotBlank()) {
+                            Firebase.auth.sendPasswordResetEmail(email)
+                                .addOnCompleteListener { task ->
+                                    if(task.isSuccessful) {
+                                        Toast.makeText(context, "重設密碼郵件已寄出，請至信箱收取", Toast.LENGTH_SHORT).show()
+                                        resetEmailSent = true
+                                    }
+                                    else {
+                                        Toast.makeText(context, "您尚未註冊帳號", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                        }
+                        else {
+                            Toast.makeText(context, "請輸入電子信箱", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    else {
+                        Firebase.auth.sendPasswordResetEmail(email).addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Toast.makeText(context, "重設密碼郵件已重新寄出", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "寄送失敗: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7BADC)),
+                border = BorderStroke(width = 2.dp, color = Black),
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
-                    .padding(top = 10.dp)
+                    .padding(top = 25.dp)
+                    .size(width = 150.dp, height = 50.dp)
                     .align(Alignment.CenterHorizontally)
-            )
+            ) {
+                Text(
+                    text = "送出",
+                    color = Black,
+                    fontSize = 15.sp
+                )
+            }
         }
     }
 }
