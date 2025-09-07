@@ -56,12 +56,20 @@ fun LoginPage(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    val unknownAccount by remember { mutableStateOf<Boolean>(false) }
+    var showError by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     LaunchedEffect(state.signInError) {
         state.signInError?.let { error ->
+            showError = true // 顯示錯誤訊息
             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // 登入成功時隱藏錯誤訊息
+    LaunchedEffect(state.isSignInSuccessful) {
+        if (state.isSignInSuccessful) {
+            showError = false
         }
     }
 
@@ -83,7 +91,11 @@ fun LoginPage(
         //emailTextField
         TextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = {
+                email = it
+                // 使用者重新輸入時，隱藏錯誤訊息
+                if (showError) showError = false
+            },
             label = { Text("電子信箱") },
             modifier = Modifier
                 .width(350.dp)
@@ -102,7 +114,10 @@ fun LoginPage(
         //passwordTextField
         TextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { password = it
+                // 使用者重新輸入時，隱藏錯誤訊息
+                if (showError) showError = false
+            },
             label = { Text("密碼") },
             modifier = Modifier
                 .padding(top = 25.dp)
@@ -121,18 +136,21 @@ fun LoginPage(
 
         Row(
             modifier = Modifier.width(350.dp),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             //emailPasswordWrongHint
-            if(unknownAccount){
+            if(showError){
                 Text(
                     text = "電子信箱或密碼錯誤",
                     color = Color(0xFFCA0000),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
+                    fontSize = 16.sp,
                     modifier = Modifier
                         .padding(top = 10.dp)
+                        .weight(1f)
                 )
+            } else {
+                Text("", modifier = Modifier.weight(1f))
             }
 
             //forgetPasswordButton
