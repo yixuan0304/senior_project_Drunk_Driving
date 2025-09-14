@@ -169,7 +169,7 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                 )
             }
 
-            Box(){
+            Box {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(1),
                     userScrollEnabled = true,
@@ -212,11 +212,14 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                 Button(
                     onClick = {/*重新載入此頁*/},
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(top = 500.dp)
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
                         .size(width = 100.dp, height = 50.dp)
                 ){
-                    Text("更新")
+                    Text(
+                        "更新",
+                        fontSize = 15.sp
+                    )
                 }
             }
         }
