@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Home
@@ -48,6 +50,7 @@ import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
 fun PublicDrunkDrivingHistoryPage(navController: NavController){
     val searchQuery = rememberSaveable() { mutableStateOf("") }
     val filteredCase = cases.filter { it.toString().contains(searchQuery.value, ignoreCase = true) }
+    val selectedCase = rememberSaveable { mutableStateOf<CaseData?>(null) }
 
     Scaffold(
         topBar = {
@@ -132,47 +135,65 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
             SearchBar(searchQuery)
 
             Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
                     .padding(top = 15.dp)
+                    .background(Color(0xFF5957b0))
+                    .padding(vertical = 8.dp, horizontal = 4.dp)
             ){
                 Text(
                     text = "案件編號",
                     color = Color.White,
                     textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
                     modifier = Modifier
-                        .fillMaxSize()
                         .weight(1f)
-                        .background(Color(0xFF5957b0))
-                        .padding(top = 5.dp)
+                        .padding(horizontal = 2.dp)
                 )
                 Text(
                     text = "時間",
                     color = Color.White,
                     textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
                     modifier = Modifier
-                        .fillMaxSize()
                         .weight(1f)
-                        .background(Color(0xFF5957b0))
-                        .padding(top = 5.dp)
+                        .padding(horizontal = 2.dp)
                 )
                 Text(
                     text = "地點",
                     color = Color.White,
                     textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
                     modifier = Modifier
-                        .fillMaxSize()
                         .weight(1f)
-                        .background(Color(0xFF5957b0))
-                        .padding(top = 5.dp)
+                        .padding(horizontal = 2.dp)
+                )
+                Text(
+                    text = "處理狀況",
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 2.dp)
+                )
+                Text(
+                    text = "類別",
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 2.dp)
                 )
             }
-
             Box {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(1),
                     userScrollEnabled = true,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color(0xFFd0d2e9))
@@ -181,33 +202,72 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .fillMaxWidth(1f)
-                                .heightIn(min = 60.dp)
-                                .clickable{}
-                        ){
+                                .fillMaxWidth()
+                                .heightIn(min = 70.dp)
+                                .clickable { selectedCase.value = case }
+                                .padding(vertical = 8.dp, horizontal = 4.dp)
+                        ) {
                             Text(
                                 text = case.id,
                                 textAlign = TextAlign.Center,
+                                fontSize = 14.sp,
                                 modifier = Modifier
                                     .weight(1f)
+                                    .padding(horizontal = 2.dp)
                             )
                             Text(
                                 text = case.time,
                                 textAlign = TextAlign.Center,
+                                fontSize = 14.sp,
                                 modifier = Modifier
                                     .weight(1f)
+                                    .padding(horizontal = 2.dp)
                             )
                             Text(
-                                text = case.location,
+                                text = case.location.replace("區", "區\n"),
                                 textAlign = TextAlign.Center,
-                                fontSize = 15.sp,
+                                fontSize = 11.sp,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .padding(end = 5.dp)
+                                    .padding(horizontal = 2.dp)
                             )
+                            Text(
+                                text = case.status,
+                                textAlign = TextAlign.Center,
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 2.dp)
+                            )
+                            Column(
+                                Modifier
+                                    .fillMaxHeight(1f)
+                                    .weight(1f),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(16.dp)
+                                        .background(getColorFormLevel(case.level), CircleShape)
+                                )
+                                Text(
+                                    text = case.level,
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 14.sp
+                                )
+                            }
                         }
                     }
                 }
+
+                if(selectedCase.value != null){
+                    CaseDetailDialog(
+                        case = selectedCase,
+                        onDismiss = {selectedCase.value = null}
+                    )
+                }
+
                 //更新按鈕
                 Button(
                     onClick = {/*重新載入此頁*/},
