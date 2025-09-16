@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
@@ -27,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,6 +43,10 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import java.io.File
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.drunk_driving.video.FirebaseStorageHelper
+import com.example.drunk_driving.video.VideoViewModel
+import kotlinx.coroutines.launch
 
 private val REQUIRED_PERMISSIONS = arrayOf(
     Manifest.permission.CAMERA,
@@ -49,10 +55,14 @@ private val REQUIRED_PERMISSIONS = arrayOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CameraPhotoPage(navController: NavController) {
+fun CameraPhotoPage(
+    navController: NavController,
+    videoViewModel: VideoViewModel = viewModel()
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val activity = context as? Activity
+    val coroutineScope = rememberCoroutineScope()
 
     // 權限請求
     LaunchedEffect(Unit) {
@@ -66,11 +76,12 @@ fun CameraPhotoPage(navController: NavController) {
     val scaffoldState = rememberBottomSheetScaffoldState()
 
     var isRecording by remember { mutableStateOf(false) }
+    var isUploading by remember { mutableStateOf(false) }
     var recording by remember { mutableStateOf<Recording?>(null) }
     var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
 
     // 預覽組件
-    var previewView = remember { PreviewView(context) }
+    val previewView = remember { PreviewView(context) }
 
     // 初始化相機，綁定 Preview 和 VideoCapture
     LaunchedEffect(key1 = Unit) {
@@ -143,10 +154,32 @@ fun CameraPhotoPage(navController: NavController) {
                 )
             }
 
-            // 錄影開始/停止按鈕
+            // 上傳進度
+            if (isUploading) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(16.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(50.dp),
+                        color = White
+                    )
+                }
+                Text(
+                    text = "正在上傳影片...",
+                    color = White,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(top = 80.dp)
+                )
+            }
+
+            // 錄影開始 / 停止按鈕
             IconButton(
                 onClick = {
                     if (videoCapture == null) return@IconButton
+
                     if (isRecording) {
                         recording?.stop()
                         recording = null
@@ -168,11 +201,30 @@ fun CameraPhotoPage(navController: NavController) {
                                         if (event.hasError()) {
                                             Log.e(
                                                 "CameraVideo",
-                                                "錄影失敗: ${event.error}, ${event.cause}, ${event.outputResults?.outputUri}"
+                                                "錄影失敗: ${event.error}, ${event.cause}, ${event.outputResults.outputUri}"
                                             )
                                             Toast.makeText(context, "錄影失敗", Toast.LENGTH_SHORT).show()
                                         } else {
-                                            Toast.makeText(context, "錄影成功\n檔案位置: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+                                            // 錄影成功，開始上傳到 Firebase
+                                            Toast.makeText(context, "錄影完成，開始上傳...", Toast.LENGTH_SHORT).show()
+                                            isUploading = true
+
+                                            coroutineScope.launch {
+                                                try {
+                                                    val videoUri = Uri.fromFile(file)
+                                                    val videoData = FirebaseStorageHelper.uploadVideo(videoUri)
+                                                    videoViewModel.addVideo(videoData)
+                                                    // 上傳成功後刪除本地檔案
+                                                    file.delete()
+
+                                                    isUploading = false
+                                                    Toast.makeText(context, "影片上傳成功！", Toast.LENGTH_SHORT).show()
+                                                } catch (e: Exception) {
+                                                    Log.e("CameraVideo", "上傳失敗", e)
+                                                    isUploading = false
+                                                    Toast.makeText(context, "影片上傳失敗: ${e.message}", Toast.LENGTH_LONG).show()
+                                                }
+                                            }
                                         }
                                         recording = null
                                         isRecording = false
@@ -188,7 +240,8 @@ fun CameraPhotoPage(navController: NavController) {
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 32.dp)
-                    .size(100.dp)
+                    .size(100.dp),
+                enabled = !isUploading // 上傳時禁用按鈕
             ) {
                 Icon(
                     imageVector = if (isRecording) Icons.Default.RadioButtonUnchecked else Icons.Default.RadioButtonChecked,
