@@ -2,6 +2,7 @@ package com.example.drunk_driving.auth.sign_in
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.drunk_driving.model.UserData
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
@@ -19,7 +20,7 @@ class SignInViewModel: ViewModel() {
         viewModelScope.launch {
             if (result.data != null) {
                 // Google 登入成功，檢查資料庫中是否已有用戶身份
-                val userIdentity = getUserIdentityFromDatabase(result.data.userId)
+                val userIdentity = getUserIdentityFromDatabase(result.data.uId)
 
                 _state.update {
                     it.copy(
@@ -66,8 +67,7 @@ class SignInViewModel: ViewModel() {
                             isGoogleSignIn = false,
                             userIdentity = userIdentity,  // 設置用戶身份
                             userData = UserData(
-                                userId = result.user!!.uid,
-                                username = result.user!!.displayName ?: "",
+                                uId = result.user!!.uid,
                                 email = result.user!!.email ?: email
                             )
                         )

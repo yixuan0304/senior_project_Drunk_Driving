@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import com.example.drunk_driving.R
+import com.example.drunk_driving.model.UserData
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.Firebase
@@ -39,8 +40,7 @@ class GoogleAuthUiClient(
             SignInResult(
                 data = user?.run {
                     UserData(
-                        userId = user.uid,
-                        username = user.displayName ?: "",
+                        uId = user.uid,
                         email = user.email ?: ""
                     )
                 },
@@ -68,8 +68,7 @@ class GoogleAuthUiClient(
 
     fun getSignedInUser(): UserData?= auth.currentUser?.run {
         UserData(
-            userId = uid,
-            username = displayName ?: "",
+            uId = uid,
             email = email ?: ""
         )
     }
