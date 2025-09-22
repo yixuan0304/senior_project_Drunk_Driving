@@ -32,6 +32,7 @@ import com.example.drunk_driving.auth.ResetPasswordPage
 import com.example.drunk_driving.auth.sign_in.GoogleAuthUiClient
 import com.example.drunk_driving.auth.sign_in.SignInViewModel
 import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
+import com.example.drunk_driving.utils.AppInitializer
 import com.google.android.gms.auth.api.identity.Identity
 import kotlinx.coroutines.launch
 
@@ -46,6 +47,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // 初始化應用程式
+        AppInitializer.initialize(this)
         setContent {
             Drunk_DrivingTheme {
                 Scaffold(

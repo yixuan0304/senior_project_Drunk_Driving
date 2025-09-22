@@ -1,4 +1,4 @@
-package com.example.drunk_driving.video
+package com.example.drunk_driving.model
 
 data class VideoData(
     val videoUrl: String,

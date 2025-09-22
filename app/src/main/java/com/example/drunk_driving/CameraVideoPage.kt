@@ -44,13 +44,17 @@ import androidx.navigation.NavController
 import java.io.File
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.drunk_driving.utils.LocationHelper
+import com.example.drunk_driving.utils.UserManager
 import com.example.drunk_driving.video.FirebaseStorageHelper
 import com.example.drunk_driving.video.VideoViewModel
 import kotlinx.coroutines.launch
 
 private val REQUIRED_PERMISSIONS = arrayOf(
     Manifest.permission.CAMERA,
-    Manifest.permission.RECORD_AUDIO
+    Manifest.permission.RECORD_AUDIO,
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,6 +115,13 @@ fun CameraPhotoPage(
         }
     }
 
+    // 位置資訊狀態
+    var locationInfo by remember { mutableStateOf<LocationHelper.LocationInfo?>(null) }
+
+    LaunchedEffect(Unit) {
+        locationInfo = LocationHelper.getCurrentLocationInfo(context)
+    }
+
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 0.dp,
@@ -167,7 +178,7 @@ fun CameraPhotoPage(
                     )
                 }
                 Text(
-                    text = "正在上傳影片...",
+                    text = "正在上傳影片並建立案件...",
                     color = White,
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -206,23 +217,48 @@ fun CameraPhotoPage(
                                             Toast.makeText(context, "錄影失敗", Toast.LENGTH_SHORT).show()
                                         } else {
                                             // 錄影成功，開始上傳到 Firebase
-                                            Toast.makeText(context, "錄影完成，開始上傳...", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "錄影完成，開始上傳並建立案件..", Toast.LENGTH_SHORT).show()
                                             isUploading = true
 
                                             coroutineScope.launch {
                                                 try {
                                                     val videoUri = Uri.fromFile(file)
-                                                    val videoData = FirebaseStorageHelper.uploadVideo(videoUri)
-                                                    videoViewModel.addVideo(videoData)
-                                                    // 上傳成功後刪除本地檔案
-                                                    file.delete()
 
-                                                    isUploading = false
-                                                    Toast.makeText(context, "影片上傳成功！", Toast.LENGTH_SHORT).show()
+                                                    // 同時上傳影片和建立案件
+                                                    val result = FirebaseStorageHelper.uploadVideoAndCreateCase(
+                                                        uri = videoUri,
+                                                        reporterId = UserManager.getCurrentUserId(),
+                                                        latitude = locationInfo?.latitude ?: 0.0,
+                                                        longitude = locationInfo?.longitude ?: 0.0,
+                                                        address = locationInfo?.address ?: "位置未知"
+                                                    )
+
+                                                    result.onSuccess { (videoData, caseId) ->
+                                                        // 更新ViewModel
+                                                        videoViewModel.addVideo(videoData)
+
+                                                        // 刪除本地檔案
+                                                        file.delete()
+
+                                                        isUploading = false
+                                                        Toast.makeText(
+                                                            context,
+                                                            "影片上傳成功！案件編號: $caseId",
+                                                            Toast.LENGTH_LONG
+                                                        ).show()
+                                                    }.onFailure { e ->
+                                                        Log.e("CameraVideo", "上傳或建立案件失敗", e)
+                                                        isUploading = false
+                                                        Toast.makeText(
+                                                            context,
+                                                            "處理失敗: ${e.message}",
+                                                            Toast.LENGTH_LONG
+                                                        ).show()
+                                                    }
                                                 } catch (e: Exception) {
-                                                    Log.e("CameraVideo", "上傳失敗", e)
+                                                    Log.e("CameraVideo", "處理過程發生錯誤", e)
                                                     isUploading = false
-                                                    Toast.makeText(context, "影片上傳失敗: ${e.message}", Toast.LENGTH_LONG).show()
+                                                    Toast.makeText(context, "處理失敗: ${e.message}", Toast.LENGTH_LONG).show()
                                                 }
                                             }
                                         }
