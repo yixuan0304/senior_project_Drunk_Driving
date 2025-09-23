@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -34,7 +36,11 @@ import com.example.drunk_driving.auth.sign_in.SignInViewModel
 import com.example.drunk_driving.ui.theme.Drunk_DrivingTheme
 import com.example.drunk_driving.utils.AppInitializer
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity() {
     private val googleAuthUiClient by lazy {
@@ -47,8 +53,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         // 初始化應用程式
         AppInitializer.initialize(this)
+
         setContent {
             Drunk_DrivingTheme {
                 Scaffold(
@@ -63,6 +71,8 @@ class MainActivity : ComponentActivity() {
                         val navController = rememberNavController()
                         val viewModel = viewModel<SignInViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
+
+                        // Google 登入 launcher
                         val launcher = rememberLauncherForActivityResult(
                             contract = ActivityResultContracts.StartIntentSenderForResult(),
                             onResult = { result ->
@@ -77,59 +87,68 @@ class MainActivity : ComponentActivity() {
                             }
                         )
 
-                        LaunchedEffect(key1 = state.isSignInSuccessful) {
+                        // 檢查用戶登入狀態來決定起始頁面
+                        val startDestination = remember { mutableStateOf("LoadingPage") }
+
+                        LaunchedEffect(Unit) {
+                            val currentUser = Firebase.auth.currentUser
+                            if (currentUser != null && currentUser.isEmailVerified) {
+                                try {
+                                    val userDoc = Firebase.firestore.collection("Users")
+                                        .document(currentUser.uid)
+                                        .get()
+                                        .await()
+
+                                    startDestination.value = when (userDoc.getString("identity")) {
+                                        "public" -> "PublicHomePage"
+                                        "police" -> "PoliceIncidentManagementPage"
+                                        else -> {
+                                            val email = currentUser.email ?: ""
+                                            val loginMethod = userDoc.getString("loginMethod") ?: "email"
+                                            if (loginMethod == "google") {
+                                                "SelectIdentityPage/$email/true"
+                                            } else {
+                                                "SelectIdentityPage"
+                                            }
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    startDestination.value = "LoginPage"
+                                }
+                            } else {
+                                startDestination.value = "LoginPage"
+                            }
+                        }
+
+                        // 處理登入成功
+                        LaunchedEffect(state.isSignInSuccessful) {
                             if(state.isSignInSuccessful) {
-                                Toast.makeText(
-                                    applicationContext,
-                                    "Sign in successful",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                                // 檢查是否為 Google 登入
-                                if(state.isGoogleSignIn) {
-                                    when(state.userIdentity) {
-                                        "police" -> {
-                                            navController.navigate("PoliceIncidentManagementPage") {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        }
-                                        "public" -> {
-                                            navController.navigate("PublicHomePage") {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        }
-                                        else -> {
-                                            // 如果 identity 為空或無效，跳轉到身份選擇頁面
-                                            val userEmail = state.userData?.email ?: ""
-                                            navController.navigate("SelectIdentityPage/$userEmail/true") {
-                                                popUpTo("LoginPage") { inclusive = true }
-                                            }
+                                Toast.makeText(applicationContext, "登入成功", Toast.LENGTH_LONG).show()
+
+                                val destination = when(state.userIdentity) {
+                                    "police" -> "PoliceIncidentManagementPage"
+                                    "public" -> "PublicHomePage"
+                                    else -> {
+                                        // 需要選擇身分
+                                        val userEmail = state.userData?.email ?: ""
+                                        if (state.isGoogleSignIn) {
+                                            "SelectIdentityPage/$userEmail/true"
+                                        } else {
+                                            "SelectIdentityPage"
                                         }
                                     }
-                                } else {
-                                    when(state.userIdentity) {
-                                        "police" -> {
-                                            navController.navigate("PoliceIncidentManagementPage") {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        }
-                                        "public" -> {
-                                            navController.navigate("PublicHomePage") {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        }
-                                        // 如果 identity 為空或無效，跳轉到身份選擇頁面
-                                        else -> {
-                                            navController.navigate("SelectIdentityPage") {
-                                                popUpTo("LoginPage") { inclusive = true }
-                                            }
-                                        }
-                                    }
+                                }
+                                navController.navigate(destination) {
+                                    popUpTo(0) { inclusive = true }
                                 }
                                 viewModel.resetState()
                             }
                         }
 
-                        NavHost(navController = navController, startDestination = "LoadingPage") {
+                        NavHost(
+                            navController = navController,
+                            startDestination = startDestination.value
+                        ) {
                             composable("LoadingPage") {
                                 LoadingPage(
                                     navController
@@ -169,11 +188,7 @@ class MainActivity : ComponentActivity() {
                                     onSignOut = {
                                         lifecycleScope.launch {
                                             googleAuthUiClient.signOut()
-                                            Toast.makeText(
-                                                applicationContext,
-                                                "Sign out",
-                                                Toast.LENGTH_LONG
-                                            ).show()
+                                            Toast.makeText(applicationContext, "已登出", Toast.LENGTH_LONG).show()
                                         }
                                     }
                                 )
@@ -184,11 +199,7 @@ class MainActivity : ComponentActivity() {
                                     onSignOut = {
                                         lifecycleScope.launch {
                                             googleAuthUiClient.signOut()
-                                            Toast.makeText(
-                                                applicationContext,
-                                                "Sign out",
-                                                Toast.LENGTH_LONG
-                                            ).show()
+                                            Toast.makeText(applicationContext, "已登出", Toast.LENGTH_LONG).show()
                                         }
                                     }
                                 )
