@@ -144,7 +144,9 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                         IconButton(
                             onClick = {
                                 /* 跳到PublicDrunkDrivingHistoryPage */
-                                navController.navigate("PublicDrunkDrivingHistoryPage")
+                                navController.navigate("PublicDrunkDrivingHistoryPage"){
+                                    popUpTo("PublicDrunkDrivingHistoryPage") { inclusive = true }
+                                }
                             },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -158,7 +160,9 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                         IconButton(
                             onClick = {
                                 /* 跳到PublicHomePage */
-                                navController.navigate("PublicHomePage")
+                                navController.navigate("PublicHomePage") {
+                                    popUpTo("PublicHomePage") { inclusive = true }
+                                }
                             },
                             modifier = Modifier.weight(1f)
                         ) {

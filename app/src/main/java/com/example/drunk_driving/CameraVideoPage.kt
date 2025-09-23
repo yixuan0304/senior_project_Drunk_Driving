@@ -145,7 +145,9 @@ fun CameraPhotoPage(
             ){
                 IconButton(
                     onClick = {
-                        navController.navigate("PublicHomePage")
+                        navController.navigate("PublicHomePage") {
+                            popUpTo("PublicHomePage") { inclusive = true }
+                        }
                     }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -159,7 +161,9 @@ fun CameraPhotoPage(
                     modifier = Modifier
                         // 點擊文字也能返回
                         .clickable {
-                            navController.navigate("PublicHomePage")
+                            navController.navigate("PublicHomePage") {
+                                popUpTo("PublicHomePage") { inclusive = true }
+                            }
                         }
                         .padding(top = 10.dp)
                 )

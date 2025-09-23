@@ -88,28 +88,40 @@ class MainActivity : ComponentActivity() {
                                 if(state.isGoogleSignIn) {
                                     when(state.userIdentity) {
                                         "police" -> {
-                                            navController.navigate("PoliceIncidentManagementPage")
+                                            navController.navigate("PoliceIncidentManagementPage") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
                                         }
                                         "public" -> {
-                                            navController.navigate("PublicHomePage")
+                                            navController.navigate("PublicHomePage") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
                                         }
                                         else -> {
                                             // 如果 identity 為空或無效，跳轉到身份選擇頁面
                                             val userEmail = state.userData?.email ?: ""
-                                            navController.navigate("SelectIdentityPage/$userEmail/true")
+                                            navController.navigate("SelectIdentityPage/$userEmail/true") {
+                                                popUpTo("LoginPage") { inclusive = true }
+                                            }
                                         }
                                     }
                                 } else {
                                     when(state.userIdentity) {
                                         "police" -> {
-                                            navController.navigate("PoliceIncidentManagementPage")
+                                            navController.navigate("PoliceIncidentManagementPage") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
                                         }
                                         "public" -> {
-                                            navController.navigate("PublicHomePage")
+                                            navController.navigate("PublicHomePage") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
                                         }
                                         // 如果 identity 為空或無效，跳轉到身份選擇頁面
                                         else -> {
-                                            navController.navigate("SelectIdentityPage")
+                                            navController.navigate("SelectIdentityPage") {
+                                                popUpTo("LoginPage") { inclusive = true }
+                                            }
                                         }
                                     }
                                 }
@@ -120,8 +132,7 @@ class MainActivity : ComponentActivity() {
                         NavHost(navController = navController, startDestination = "LoadingPage") {
                             composable("LoadingPage") {
                                 LoadingPage(
-                                    navController,
-                                    isUserSignedIn = googleAuthUiClient.getSignedInUser() != null
+                                    navController
                                 )
                             }
                             composable("LoginPage") {

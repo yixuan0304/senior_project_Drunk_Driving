@@ -155,7 +155,9 @@ fun PoliceIncidentManagementPage(
                                 coroutineScope.launch {
                                     Firebase.auth.signOut()
                                     onSignOut()
-                                    navController.navigate("LoginPage")
+                                    navController.navigate("LoginPage") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
                                 }
                             },
                             modifier = Modifier.weight(1f)

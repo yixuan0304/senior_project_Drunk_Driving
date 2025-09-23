@@ -174,7 +174,9 @@ fun PublicHomePage(
                         IconButton(
                             onClick = {
                                 /* 跳到PublicDrunkDrivingHistoryPage */
-                                navController.navigate("PublicDrunkDrivingHistoryPage")
+                                navController.navigate("PublicDrunkDrivingHistoryPage"){
+                                    popUpTo("PublicDrunkDrivingHistoryPage") { inclusive = true }
+                                }
                             },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -188,7 +190,9 @@ fun PublicHomePage(
                         IconButton(
                             onClick = {
                                 /* 跳到PublicHomePage */
-                                navController.navigate("PublicHomePage")
+                                navController.navigate("PublicHomePage") {
+                                    popUpTo("PublicHomePage") { inclusive = true }
+                                }
                             },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -205,7 +209,9 @@ fun PublicHomePage(
                                 coroutineScope.launch {
                                     Firebase.auth.signOut()
                                     onSignOut()
-                                    navController.navigate("LoginPage")
+                                    navController.navigate("LoginPage") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
                                 }
                             },
                             modifier = Modifier.weight(1f)

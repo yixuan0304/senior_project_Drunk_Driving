@@ -81,7 +81,15 @@ fun SelectIdentityPage(
                 modifier = Modifier.fillMaxWidth()
             ){
                 IconButton(onClick = {
-                    navController.navigate("RegisterPage")
+                    if (isGoogleLogin) {
+                        // Google 登入用戶應該返回到登入頁面重新選擇
+                        navController.navigate("LoginPage") {
+                            popUpTo("LoginPage") { inclusive = true }
+                        }
+                    } else {
+                        // 一般註冊用戶返回註冊頁面
+                        navController.navigate("RegisterPage")
+                    }
                 }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -266,9 +274,13 @@ fun SelectIdentityPage(
 
                             // 根據身分導向不同頁面
                             if (isPublicButtonClicked) {
-                                navController.navigate("PublicHomePage")
+                                navController.navigate("PublicHomePage") {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             } else if (isPoliceButtonClicked) {
-                                navController.navigate("PoliceIncidentManagementPage")
+                                navController.navigate("PoliceIncidentManagementPage") {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
                         }
                         .addOnFailureListener { exception ->

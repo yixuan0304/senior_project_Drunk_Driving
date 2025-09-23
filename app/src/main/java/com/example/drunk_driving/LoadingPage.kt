@@ -21,19 +21,12 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun LoadingPage(
-    navController: NavController,
-    isUserSignedIn: Boolean
+    navController: NavController
 ){
     LaunchedEffect(Unit) {
         delay(3000)
-        if (isUserSignedIn) {
-            navController.navigate("SelectIdentityPage") {
-                popUpTo("LoadingPage") { inclusive = true }
-            }
-        } else {
-            navController.navigate("LoginPage") {
-                popUpTo("LoadingPage") { inclusive = true }
-            }
+        navController.navigate("LoginPage") {
+            popUpTo("LoadingPage") { inclusive = true }
         }
     }
 

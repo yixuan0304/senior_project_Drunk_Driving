@@ -76,7 +76,7 @@ fun RegisterPage(navController: NavController) {
     var isRegisterButtonClicked by remember { mutableStateOf(false) }
     var verificationEmailSent by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
-    var isChecking by remember { mutableStateOf(false) }
+    var isChecking by remember { mutableStateOf(false) } //檢查驗證流程
     val context = LocalContext.current
 
     // 檢查Email驗證狀態
@@ -89,7 +89,9 @@ fun RegisterPage(navController: NavController) {
                         isChecking = false
                         Toast.makeText(context, "Email驗證成功！請選擇您的身分", Toast.LENGTH_LONG).show()
                         // 傳遞註冊資料
-                        navController.navigate("SelectIdentityPage/$email/$phoneNumber")
+                        navController.navigate("SelectIdentityPage/$email/$phoneNumber") {
+                            popUpTo("RegisterPage") { inclusive = true }
+                        }
                     }
                 }
                 delay(3000)
@@ -115,7 +117,9 @@ fun RegisterPage(navController: NavController) {
                     /* 返回LoginPage */
                     verificationEmailSent = false
                     isChecking = false
-                    navController.navigate("LoginPage")
+                    navController.navigate("LoginPage") {
+                        popUpTo("LoginPage") { inclusive = true }
+                    }
                 }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -132,7 +136,9 @@ fun RegisterPage(navController: NavController) {
                             /* 返回LoginPage */
                             verificationEmailSent = false
                             isChecking = false
-                            navController.navigate("LoginPage")
+                            navController.navigate("LoginPage") {
+                                popUpTo("LoginPage") { inclusive = true }
+                            }
                         }
                         .padding(top = 10.dp)
                 )
@@ -151,7 +157,7 @@ fun RegisterPage(navController: NavController) {
         // 如果已經寄送驗證信，顯示驗證提示
         if (verificationEmailSent) {
             Text(
-                text = "我們已經將驗證信寄到\n$email\n請前往信箱點擊驗證連結",
+                text = "驗證信已寄到\n$email\n請前往信箱點擊驗證連結",
                 textAlign = TextAlign.Center,
                 color = White,
                 fontSize = 16.sp,

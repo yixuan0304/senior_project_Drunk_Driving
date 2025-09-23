@@ -72,7 +72,9 @@ fun ForgetPasswordPage(navController: NavController){
             ){
                 IconButton(onClick = {
                     /* 返回LoginPage */
-                    navController.navigate("LoginPage")
+                    navController.navigate("LoginPage") {
+                        popUpTo("LoginPage") { inclusive = true }
+                    }
                 }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -87,7 +89,9 @@ fun ForgetPasswordPage(navController: NavController){
                         // 點擊文字也能返回
                         .clickable {
                             /* 返回LoginPage */
-                            navController.navigate("LoginPage")
+                            navController.navigate("LoginPage") {
+                                popUpTo("LoginPage") { inclusive = true }
+                            }
                         }
                         .padding(top = 10.dp)
                 )
