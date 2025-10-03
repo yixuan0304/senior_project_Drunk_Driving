@@ -221,7 +221,6 @@ fun CameraPhotoPage(
                                             Toast.makeText(context, "錄影失敗", Toast.LENGTH_SHORT).show()
                                         } else {
                                             // 錄影成功，開始上傳到 Firebase
-                                            Toast.makeText(context, "錄影完成，開始上傳並建立案件..", Toast.LENGTH_SHORT).show()
                                             isUploading = true
 
                                             coroutineScope.launch {

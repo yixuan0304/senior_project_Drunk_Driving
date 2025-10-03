@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -72,7 +74,6 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
     // 排序相關狀態
     val sortField = remember { mutableStateOf(PublicSortField.TIME) }
     val sortAscending = remember { mutableStateOf(false) } // 預設最新的在前面
-
 
     // 載入當前用戶的案件資料
     val currentUser = FirebaseAuth.getInstance().currentUser
@@ -128,9 +129,12 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                     Text(
                         "檢舉記錄",
                         modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 30.sp
                     )
-                }
+                },
+                modifier = Modifier.heightIn(max = 100.dp)
             )
         },
         bottomBar = {
@@ -209,8 +213,6 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                     .fillMaxWidth()
                     .height(50.dp)
                     .padding(top = 15.dp)
-                    .background(Color(0xFF5957b0))
-                    .padding(vertical = 8.dp, horizontal = 4.dp)
             ){
                 // 可排序的案件編號標題
                 PublicSortableHeaderCell(
@@ -285,7 +287,65 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                     ) {
                         CircularProgressIndicator()
                     }
+                } else if (filteredCase.isEmpty() && searchQuery.value.isNotBlank()) {
+                    // 有搜尋但無結果
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "找不到符合的結果",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "搜尋關鍵字：${searchQuery.value}",
+                            fontSize = 16.sp,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "請嘗試其他關鍵字",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                } else if (cases.value.isEmpty()) {
+                    // 完全沒有檢舉記錄
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.folder_icon),
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "目前沒有任何檢舉記錄",
+                            fontSize = 18.sp,
+                            color = Color.Gray
+                        )
+                    }
                 } else {
+                    // 顯示檢舉記錄列表
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(1),
                         userScrollEnabled = true,
@@ -332,7 +392,6 @@ fun PublicDrunkDrivingHistoryPage(navController: NavController){
                         }
                     }
                 }
-
                 if(selectedCase.value != null){
                     CaseDetailDialog(
                         case = selectedCase.value,
@@ -396,7 +455,7 @@ fun RowScope.PublicSortableHeaderCell(
                 text = text,
                 color = Color.White,
                 textAlign = TextAlign.Center,
-                fontSize = 12.sp
+                fontSize = 15.sp
             )
             if (isCurrentField) {
                 Spacer(modifier = Modifier.width(4.dp))

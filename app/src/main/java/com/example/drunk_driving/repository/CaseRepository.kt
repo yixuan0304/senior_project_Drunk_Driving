@@ -20,7 +20,7 @@ object CaseRepository {
         latitude: Double = 0.0,
         longitude: Double = 0.0,
         address: String = "待定位",
-        classification: String = "酒駕檢舉"
+        classification: String = ""
     ): Result<String> {
         return try {
             // 生成遞增的案件 ID

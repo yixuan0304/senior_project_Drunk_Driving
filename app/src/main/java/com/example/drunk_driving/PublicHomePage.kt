@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -158,9 +159,11 @@ fun PublicHomePage(
                         "首頁",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 30.sp
                     )
-                }
+                },
+                modifier = Modifier.heightIn(max = 100.dp)
             )
         },
         bottomBar = {

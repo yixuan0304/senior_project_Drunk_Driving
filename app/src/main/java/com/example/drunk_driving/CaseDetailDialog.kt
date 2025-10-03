@@ -169,7 +169,7 @@ fun CaseDetailDialog(
                     DetailInfoSection("發生時間", formatTimestamp(case.time))
 
                     if (type == CaseDialogType.POLICE) {
-                        DetailInfoSection("事件分級", case.classification)
+                        DetailInfoSection("AI判斷", case.classification)
 
                         val reporter = reporterInfo.value
                         if (reporter != null) {
@@ -184,7 +184,7 @@ fun CaseDetailDialog(
                     }
                     else if (type == CaseDialogType.PUBLIC) {
                         DetailInfoSection("處理狀態:", case.status)
-                        DetailInfoSection("類別", case.classification) // 要改
+                        DetailInfoSection("AI判斷", case.classification) // 要改
                     }
                 }
             },

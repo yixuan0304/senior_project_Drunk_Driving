@@ -138,6 +138,7 @@ fun PoliceIncidentManagementPage(
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Bold,
+                        fontSize = 30.sp
                     )
                 }
             )
@@ -239,7 +240,7 @@ fun PoliceIncidentManagementPage(
 
                 // 可點擊的分級標題
                 SortableHeaderCell(
-                    text = "分級",
+                    text = "AI判斷",
                     currentSortField = sortField.value,
                     targetField = SortField.CLASSIFICATION,
                     isAscending = sortAscending.value,
@@ -263,7 +264,56 @@ fun PoliceIncidentManagementPage(
                     ) {
                         CircularProgressIndicator()
                     }
+                } else if (filteredCase.isEmpty() && searchQuery.value.isNotBlank()) {
+                    // 有搜尋但無結果
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "找不到符合的結果",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "搜尋關鍵字：${searchQuery.value}",
+                            fontSize = 16.sp,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "請嘗試其他關鍵字",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                } else if (cases.value.isEmpty()) {
+                    // 完全沒有案件資料
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "目前沒有任何案件",
+                            fontSize = 18.sp,
+                            color = Color.Gray
+                        )
+                    }
                 } else {
+                    // 顯示案件列表
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(1),
                         userScrollEnabled = true,
@@ -409,7 +459,7 @@ fun RowScope.SortableHeaderCell(
                 text = text,
                 color = Color.White,
                 textAlign = TextAlign.Center,
-                fontSize = 12.sp
+                fontSize = 15.sp
             )
             if (isCurrentField) {
                 Spacer(modifier = Modifier.width(4.dp))
@@ -462,9 +512,8 @@ private fun formatTimestamp(timestamp: Timestamp): String {
 // 根據分級取得顏色
 private fun getColorFormLevel (level: String): Color {
     return when(level){
-        "疑似酒駕" -> Color(0xFFFF0000)
-        "高風險" -> Color(0xFFFFA500)
-        "中高風險" -> Color(0xFFFFFF00)
+        "高風險" -> Color(0xFFFF0000)
+        "中風險" -> Color(0xFFFFA500)
         else -> Color(0xFF00FF00)
     }
 }
