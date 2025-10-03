@@ -105,6 +105,8 @@ fun RegisterPage(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF7178B3))
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 25.dp) // 確保底部有空間
     ){
         Box(
             modifier = Modifier.fillMaxWidth()
