@@ -2,7 +2,6 @@ package com.example.drunk_driving.utils
 
 import android.content.Context
 import android.util.Log
-import com.example.drunk_driving.repository.CaseRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -11,33 +10,27 @@ object AppInitializer {
     private const val PREFS_NAME = "app_prefs"
     private const val KEY_FIRST_LAUNCH = "is_first_launch"
 
-    // 應用程式首次啟動時的初始化
     fun initialize(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val isFirstLaunch = prefs.getBoolean(KEY_FIRST_LAUNCH, true)
 
         if (isFirstLaunch) {
+            Log.d("AppInitializer", "偵測到首次啟動，開始初始化...")
+
             CoroutineScope(Dispatchers.IO).launch {
                 initializeApp()
-
-                // 標記為已初始化
                 prefs.edit().putBoolean(KEY_FIRST_LAUNCH, false).apply()
+                Log.d("AppInitializer", "首次啟動標記已設定")
             }
+        } else {
+            Log.d("AppInitializer", "非首次啟動，跳過初始化")
         }
     }
 
-    // 執行初始化任務
-    private suspend fun initializeApp() {
+    private fun initializeApp() {
         try {
-            // 初始化案件計數器（從 1 開始，這樣第一個案件會是 C00001）
-            val result = CaseRepository.initializeCaseCounter(startFrom = 0)
-
-            result.onSuccess {
-                Log.d("AppInitializer", "案件計數器初始化成功")
-            }.onFailure { e ->
-                Log.e("AppInitializer", "案件計數器初始化失敗", e)
-            }
-
+            // 計數器會在首次建立案件時自動初始化
+            Log.d("AppInitializer", "應用程式初始化完成")
         } catch (e: Exception) {
             Log.e("AppInitializer", "應用程式初始化失敗", e)
         }

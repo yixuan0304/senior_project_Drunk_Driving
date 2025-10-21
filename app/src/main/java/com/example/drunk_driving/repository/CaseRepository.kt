@@ -60,15 +60,15 @@ object CaseRepository {
             val currentNumber = if (counterDoc.exists()) {
                 counterDoc.getLong("count") ?: 0L
             } else {
+                // 如果文件不存在，先初始化為 0
                 0L
             }
 
             val nextNumber = currentNumber + 1
 
-            // 更新計數器
+            // 使用 set 更新計數器（如果文件不存在會自動建立）
             transaction.set(counterDocRef, mapOf("count" to nextNumber))
 
-            // 返回格式化的案件編號
             formatCaseId(nextNumber)
         }.await()
     }
@@ -76,18 +76,5 @@ object CaseRepository {
     // 格式化案件編號為 C00001 格式
     private fun formatCaseId(number: Long): String {
         return "C${number.toString().padStart(5, '0')}"
-    }
-
-    // 初始化計數器
-    suspend fun initializeCaseCounter(startFrom: Long = 0): Result<Unit> {
-        return try {
-            counterCollection.document("caseCounter")
-                .set(mapOf("count" to startFrom))
-                .await()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e("CaseRepository", "初始化計數器失敗", e)
-            Result.failure(e)
-        }
     }
 }
